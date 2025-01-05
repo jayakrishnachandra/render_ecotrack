@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -23,10 +25,15 @@ public class HelloController {
     private TokenService tokenService;
 
     @Autowired
+    private EmailSenderService emailSenderService;
+
+    @Autowired
     private UserService userService;
 
     @Autowired
     private UsageService usageService;
+
+    private final PasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 
 
     private Optional<Token> validateToken(HttpServletRequest req)
@@ -44,7 +51,7 @@ public class HelloController {
     public String user(@RequestBody User us) {
         List<User> users = userService.findByEmail(us.email);
         User u = users.get(0);
-        if (u != null && u.password.equals(us.password)) {
+        if (users.size() == 1 && bCryptPasswordEncoder.matches(us.password, u.password)){
 
             Optional<Token> existingToken = tokenService.findByEmail(us.email);
             if(existingToken.isPresent() && !tokenService.isTokenExpired(existingToken.get()))
@@ -63,20 +70,24 @@ public class HelloController {
     @RequestMapping(path = "/register")
     public String registerUser(@RequestBody User us)
     {
-        for (User u : userService.findall())
+        // for (User u : userService.findall())
+        // {
+        //     if (u.email.equals(us.email)) {
+        //         return "User already exists";
+        //     }
+        // }
+        if(userService.findByEmail(us.email).size() == 1)
         {
-            if (u.email.equals(us.email)) {
-                return "User already exists";
-            }
+            return "User already exists";
         }
+
         final double waterPerPerson = 100;  // in liters
         final double waterPerRoom = 50;     // in liters
         final double electricityPerPerson = 2 ;   // in kWh
         final double electricityPerRoom = 2;     // in kWh
         us.totalWaterUsageLimit = (waterPerPerson * us.men_count) + (waterPerRoom * us.room_count);
         us.totalElectricityUsageLimit = (electricityPerPerson * us.men_count) + (electricityPerRoom * us.room_count);
-        
-       
+        us.password = bCryptPasswordEncoder.encode(us.password);
         userService.save(us);
         Token t = new Token(us.email);
         tokenService.save(t);
@@ -122,12 +133,40 @@ public class HelloController {
         Optional<Token> dbToken = validateToken(req);
         if (dbToken.isPresent() && !tokenService.isTokenExpired(dbToken.get()))
         {
-            // Usage u = usageService.findMostRecentByEmail(usage.getEmail());
-            // usage.setTotalElectricityUsage(u.getTotalElectricityUsage() + usage.getElectricityUsage());
-            // usage.setTotalWaterUsage(u.getTotalWaterUsage() + usage.getWaterUsage());
             String email = dbToken.get().getEmail();
             usage.setEmail(email);
-            return ResponseEntity.ok(usageService.save(usage));
+
+            usageService.save(usage);
+
+            UsageResponse ur = usageService.getTotalAndRecentUsage(email);
+
+            int totalWaterUsage = (int) ur.getTotalWaterUsage();
+            int totalElectricityUsage = (int) ur.getTotalElectricityUsage();
+
+            int totalWaterUsageLimit = (int) userService.findByEmail(email).get(0).totalWaterUsageLimit;
+            int totalElectricityUsageLimit = (int) userService.findByEmail(email).get(0).totalElectricityUsageLimit;
+
+            emailSenderService.sendEmail(email, "EcoTrack: Says hi", " water and electricity. Please use.");
+
+            if (totalWaterUsage > totalWaterUsageLimit && totalElectricityUsage > totalElectricityUsageLimit)
+            {
+              
+                emailSenderService.sendEmail(email, "EcoTrack: Usage Limit Exceeded", "You have exceeded your usage limit of both water and electricity. Please reduce your usage.");
+            }
+            else if (totalWaterUsage > totalWaterUsageLimit)
+            {
+                emailSenderService.sendEmail(email, "EcoTrack: Water Usage Limit Exceeded", "You have exceeded your water usage limit. Please reduce your usage.");
+            }
+            else if (totalElectricityUsage > totalElectricityUsageLimit)
+            {
+                emailSenderService.sendEmail(email, "EcoTrack: Electricity Usage Limit Exceeded", "You have exceeded your electricity usage limit. Please reduce your usage.");
+            }
+            System.out.println("--------------------");
+            System.out.println("Total Water Usage Limit: " + totalWaterUsageLimit);
+            System.out.println("Total Electricity Usage Limit: " + totalElectricityUsageLimit);
+            System.out.println("Total Water Usage: " + totalWaterUsage);
+            System.out.println("Total Electricity Usage: " + totalElectricityUsage);
+            return ResponseEntity.ok(usage);
         }
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
     }

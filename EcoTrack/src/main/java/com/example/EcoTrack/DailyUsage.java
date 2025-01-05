@@ -5,7 +5,7 @@ import java.time.LocalDate;
 public class DailyUsage {
     private LocalDate date; // Use String for date in "YYYY-MM-DD" format
     private double totalWaterUsage; // or Double, depending on your needs
-    private double totalElectricityUsage; // or Double
+    private double totalElectricityUsage; 
 
     public DailyUsage(LocalDate date, double totalWaterUsage, double totalElectricityUsage) {
         this.date = date;
