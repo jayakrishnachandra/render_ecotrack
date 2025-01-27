@@ -1,18 +1,20 @@
 
 ## Overview
 
-The Calendar Log Backend is a Spring Boot-based application designed to handle all backend operations for the Calendar Log project. It serves as the API layer for handling user authentication, managing companies, and storing communication logs. The backend integrates with MongoDB for persistent storage and provides services for users and administrators to interact with the system. It uses token-based authentication and BCrypt for password encryption.
+The EcoTrack Backend is a Spring Boot-based application designed to manage backend operations for the EcoTrack project. It functions as the API layer for handling user authentication, managing water and electricity usage, and storing usage logs. The backend integrates with MongoDB for persistent storage and provides services for users and administrators to monitor and manage consumption. It employs token-based authentication and BCrypt for password encryption to ensure secure interactions.
 
 ## Features
 
-- **User Authentication**: Manages user registration, login, and token-based authentication. Passwords are encrypted using **BCrypt**.
-- **Company Management**: Admins can manage companies and communication methods.
-- **Communication Logs**: Stores and manages communication logs for each company.
-- **API Endpoints**: Exposes RESTful APIs for the frontend to interact with.
-- **Service Layer**: Handles business logic for communication methods, companies, and users.
-- **Token-Based Authentication**: JWT tokens are used for secure API access.
-- **Database Integration**: Uses **MongoDB** as the database to store company data, communication logs, and user details.
-- **Deployed on Render.com**: The backend is deployed on Render for easy access and scalability.
+- **User Authentication**: Manages user registration, login, and token-based authentication with BCrypt-encrypted passwords.
+- **Usage Tracking**: Tracks daily water and electricity usage with real-time updates.
+- **Personalized Goals**: Allows users to set and manage personalized consumption targets.
+- **Usage Insights**: Provides detailed usage statistics and trends over daily, weekly, and monthly periods.
+- **Notifications**: Sends email alerts for goal achievements and overuse warnings.
+- **API Endpoints**: Offers RESTful APIs for seamless frontend integration.
+- **Service Layer**: Manages business logic for usage tracking, goal setting, and notifications.
+- **Token-Based Authentication**: Ensures secure API access with JWT tokens.
+- **Database Integration**: Utilizes MongoDB to store user data, usage logs, and goal details.
+- **Deployment on Render.com**: Deployed on Render for reliability, scalability, and easy access.
 
 ## Technologies Used
 
